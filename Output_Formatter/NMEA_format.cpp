@@ -217,12 +217,37 @@ void format_PLARD ( float density, char type, char * &p)
 
 ROM char PLARB[]="$PLARB,";
 
-void format_PLARB ( float voltage, char * &p)
+void format_PLARB(float voltage,
+                  float outside_temperature,
+                  float relative_humidity,
+                  bool humidity_available,
+                  char * &p)
 {
   char * line_start = p;
-  append_string( p, PLARB);
-  to_ascii_n_decimals( voltage, 2, p);
-  p = NMEA_append_tail ( line_start);
+
+  append_string(p, PLARB);
+
+  // Field 1: battery voltage in Volt
+  to_ascii_n_decimals(voltage, 2, p);
+
+  append_string(p, ",");
+
+  // Field 2: outside temperature in Celsius
+  to_ascii_n_decimals(outside_temperature, 1, p);
+
+  append_string(p, ",");
+
+  // Field 3: relative humidity in percent
+  if (humidity_available)
+  {
+    to_ascii_n_decimals(relative_humidity, 1, p);
+  }
+  else
+  {
+    append_string(p, "---");
+  }
+
+  p = NMEA_append_tail(line_start);
 }
 
 ROM char PLARA[]="$PLARA,";
@@ -410,8 +435,26 @@ void format_NMEA_string_slow( const measurement_data_t &m, const D_GNSS_coordina
   // NMEA-format position report, sat number and GEO separation
   format_GGA ( c, next);
 
-  // battery_voltage
-  format_PLARB( m.supply_voltage, next);
+  // battery_voltage, outside temperature, humidity
+  float outside_temperature;
+  float relative_humidity;
+
+  if (m.ambient_sensor_available)
+  {
+    outside_temperature = m.ambient_temperature;
+    relative_humidity = m.ambient_humidity;
+  }
+  else
+  {
+    outside_temperature = m.static_sensor_temperature;
+    relative_humidity = 0.0f;
+  }
+
+  format_PLARB(m.supply_voltage,
+             outside_temperature,
+             relative_humidity,
+             m.ambient_sensor_available,
+             next);
 
   // air density
   format_PLARD( output_data.air_density, 'M', next);

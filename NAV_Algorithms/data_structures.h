@@ -46,8 +46,13 @@ typedef struct
   float3vector mag;   //XSENSE MTi1 IMU
   float pitot_pressure;
   float static_pressure;
-  float static_sensor_temperature;  //log temperature to monitor temperature in enclosure
-  float supply_voltage;  //Measuring the supply voltage. Might be related to sensor noise.
+  float static_sensor_temperature; //log temperature to monitor temperature in enclosure
+  float supply_voltage;            //Measuring the supply voltage. Might be related to sensor noise.
+
+  float ambient_temperature;       //!< °C, measured by SHT35
+  float ambient_humidity;          //!< %, measured by SHT35
+  bool ambient_sensor_available;   //!< true if last SHT35 measurement was valid
+  bool ambient_sensor_detected;    //!< true if SHT35 was detected on I2C bus
 } measurement_data_t;
 
 //! this structure contains all the observations from sensors and GNSS
