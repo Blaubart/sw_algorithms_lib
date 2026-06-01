@@ -61,13 +61,17 @@ enum CAN_ID_SENSOR
   CAN_Id_GPS_Heading	= 0x147,    //!< float D-GNSS heading / rad
   CAN_Id_GPS_RelPos_NE	= 0x148,    //!< float D-GNSS relPosN, float relPosE / m
   CAN_Id_GPS_RelPos_D_Length = 0x149, //!< float D-GNSS relPosD, float relPosLength / m
+  CAN_Id_Ambient_Temperature_Humidity = 0x290,
 
   CAN_Id_Heartbeat_Sens	= 0x520,
   CAN_Id_Identify_Sensor = 0x521,
   CAN_Id_Heartbeat_GNSS	= 0x540,
-  CAN_Id_Heartbeat_IMU	= 0x560
+  CAN_Id_Heartbeat_IMU	= 0x560,
+  CAN_Id_Heartbeat_Ambient = 0x690
 
 };
+
+extern uint32_t UNIQUE_ID[4]; // MPU silicon ID
 
 #if SUPPORT_D_GNSS_ACCURACY
 void CAN_output ( const measurement_data_t &m, const D_GNSS_coordinates_t &c, state_vector_t &x, const D_GNSS_accuracy_t &accuracy, bool horizon_activated)
@@ -122,6 +126,24 @@ void CAN_output ( const measurement_data_t &m, const D_GNSS_coordinates_t &c, st
   p.data_f[0] = m.static_pressure;
   p.data_f[1] = x.air_density;
   CAN_send(p, 1);
+
+/*
+static unsigned ambient_sensor_output_decimator = 0;
+
+if (ambient_sensor_output_decimator == 0)
+{
+  p.id = CAN_Id_Ambient_Temperature_Humidity;
+  p.dlc = 8;
+  p.data_f[0] = 20.0f;
+  p.data_f[1] = 50.0f;
+  CAN_send(p, 1);
+}
+
+++ambient_sensor_output_decimator;
+
+if (ambient_sensor_output_decimator >= 100)
+  ambient_sensor_output_decimator = 0;
+*/
 
   p.id=CAN_Id_Acceleration;
   p.data_f[0] = x.G_load;
@@ -227,23 +249,27 @@ void CAN_output ( const measurement_data_t &m, const D_GNSS_coordinates_t &c, st
   CAN_send(p, 1);
 }
 
-extern uint32_t UNIQUE_ID[4]; // MPU silicon ID
-
-void CAN_heartbeat( void)
+void CAN_heartbeat(bool ambient_sensor_detected)
 {
-  CANpacket p( CAN_Id_Heartbeat_Sens, 8);
+  (void)ambient_sensor_detected;
 
+  CANpacket p(CAN_Id_Heartbeat_Sens, 8);
+
+  p.id = CAN_Id_Heartbeat_Sens;
+  p.dlc = 8;
   p.data_h[0] = 2;
   p.data_h[1] = 0;
   p.data_w[1] = UNIQUE_ID[0];
   CAN_send(p, 1);
 
   p.id = CAN_Id_Identify_Sensor;
-  p.data_w[0] = 1; // todo: replace me by version of H/W
-  p.data_w[1] = __REV( GIT_TAG_DEC);
+  p.dlc = 8;
+  p.data_w[0] = 1;
+  p.data_w[1] = __REV(GIT_TAG_DEC);
   CAN_send(p, 1);
 
-  p.id=CAN_Id_Heartbeat_GNSS;
+  p.id = CAN_Id_Heartbeat_GNSS;
+  p.dlc = 8;
   p.data_h[0] = 3;
   p.data_h[1] = 0;
   p.data_w[1] = UNIQUE_ID[0];

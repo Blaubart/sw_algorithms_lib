@@ -67,7 +67,7 @@ void CAN_output ( const measurement_data_t &m, const D_GNSS_coordinates_t &c, st
 void CAN_output ( const measurement_data_t &m, const D_GNSS_coordinates_t &c, state_vector_t &x, bool horizon_activated);
 #endif
 
-void CAN_heartbeat( void);
+void CAN_heartbeat(bool ambient_sensor_available);
 bool CAN_enqueue( const CANpacket &p, unsigned max_delay = 0xffffffff);
 
 #endif /* SRC_CAN_OUTPUT_H_ */
